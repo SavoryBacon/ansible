@@ -1,0 +1,7 @@
+bind = '127.0.0.1:{{ app_props.data.deployment.remote_app_port }}'
+{% if gunicorn_max_requests is defined %}
+max_requests = {{ gunicorn_max_requests }}
+{% endif %}
+{% if gunicorn_worker_timeout is defined %}
+timeout = {{ gunicorn_worker_timeout }}
+{% endif %}

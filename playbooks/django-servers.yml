@@ -1,0 +1,7 @@
+---
+- hosts: "{{hosts|default('na_python')}}"
+  gather_facts: no  # done manually after a prereq task
+  roles:
+    - known_hosts
+    - {role: base_na_python, tags: ['clean']}
+    - na_python

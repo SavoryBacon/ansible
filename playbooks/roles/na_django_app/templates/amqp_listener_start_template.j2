@@ -1,0 +1,7 @@
+#!/bin/bash
+
+# Activate the virtual environment
+source {{ remote_apps_env }}/bin/activate
+
+{{remote_apps_env}}/bin/python {{remote_apps_app}}/scripts/amqp_create.py
+exec {{remote_apps_env}}/bin/python {{remote_apps_app}}/scripts/listener.py

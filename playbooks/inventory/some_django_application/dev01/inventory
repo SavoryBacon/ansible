@@ -1,0 +1,8 @@
+[local]
+local ansible_host=localhost
+
+[na_python]
+na-python-some-server-alias00 ansible_host=somehost00.liederba.ch
+na-python-some-server-alias01 ansible_host=somehost01.liederba.ch
+na-python-some-server-alias02 ansible_host=somehost02.liederba.ch
+na-python-some-server-alias03 ansible_host=somehost03.liederba.ch

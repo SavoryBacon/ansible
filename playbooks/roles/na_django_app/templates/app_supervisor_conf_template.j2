@@ -1,0 +1,49 @@
+[program:{{ project }}]
+command = {{ remote_apps_bin }}/gunicorn-start.sh                                   ; Command to start app
+user = {{ remote_app_user }}                                                        ; User to run as
+directory = {{ remote_apps_app }}                                                   ; Run command in this directory
+stdout_logfile = {{ remote_supervisor_log }}/{{ app_uuid }}-supervisor-stdout.log   ; Where to write stdout log messages
+stderr_logfile = {{ remote_supervisor_log }}/{{ app_uuid }}-supervisor-stderr.log   ; Where to write stderr log messages
+stdout_logfile_maxbytes = 10MB
+stderr_logfile_maxbytes = 10MB
+stdout_logfile_backups = 0
+stderr_logfile_backups = 0
+
+{% if has_celery is defined and has_celery %}
+[program:{{ celery_program_name }}]
+command = {{ remote_apps_bin }}/celery-worker-start.sh                                      ; Command to start app
+user = {{ remote_app_user }}                                                                ; User to run as
+directory = {{ remote_apps_app }}                                                           ; Run command in this directory
+stdout_logfile = {{ remote_supervisor_log }}/{{ app_uuid }}-celery-supervisor-stdout.log    ; Where to write stdout log messages
+stderr_logfile = {{ remote_supervisor_log }}/{{ app_uuid }}-celery-supervisor-stderr.log    ; Where to write stderr log messages
+stdout_logfile_maxbytes = 10MB
+stderr_logfile_maxbytes = 10MB
+stdout_logfile_backups = 0
+stderr_logfile_backups = 0
+{% endif %}
+
+{% if has_celery_beat is defined and has_celery_beat %}
+[program:{{ celery_beat_program_name }}]
+command = {{ remote_apps_bin }}/celery-beat-start.sh                                            ; Command to start app
+user = {{ remote_app_user }}                                                                    ; User to run as
+directory = {{ remote_apps_app }}                                                               ; Run command in this directory
+stdout_logfile = {{ remote_supervisor_log }}/{{ app_uuid }}-celerybeat-supervisor-stdout.log    ; Where to write stdout log messages
+stderr_logfile = {{ remote_supervisor_log }}/{{ app_uuid }}-celerybeat-supervisor-stderr.log    ; Where to write stderr log messages
+stdout_logfile_maxbytes = 10MB
+stderr_logfile_maxbytes = 10MB
+stdout_logfile_backups = 0
+stderr_logfile_backups = 0
+{% endif %}
+
+{% if has_rabbitmq is defined %}
+[program:{{ rabbitmq_program_name }}]
+command = {{ remote_apps_bin }}/amqp-listener-start.sh                                          ; Command to start the listener
+user = {{ remote_app_user }}                                                                    ; User to run as
+directory = {{ remote_apps_app }}                                                               ; Run command in this directory
+stdout_logfile = {{ remote_supervisor_log }}/{{ app_uuid }}-rabbitmq-supervisor-stdout.log      ; Where to write stdout log messages
+stderr_logfile = {{ remote_supervisor_log }}/{{ app_uuid }}-rabbitmq-supervisor-stderr.log      ; Where to write stderr log messages
+stdout_logfile_maxbytes = 10MB
+stderr_logfile_maxbytes = 10MB
+stdout_logfile_backups = 0
+stderr_logfile_backups = 0
+{% endif %}

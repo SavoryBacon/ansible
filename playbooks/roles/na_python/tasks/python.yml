@@ -1,0 +1,37 @@
+---
+- block:
+    - name: Creating python directory
+      file:
+        path: "{{remote_python}}"
+        state: directory
+    - name: Creating python src directory
+      file:
+        path: "{{remote_python_src}}"
+        state: directory
+    - name: Creating python bin directory
+      file:
+        path: "{{remote_python_bin}}"
+        state: directory
+    - name: Unpacking python source code
+      unarchive:
+        src: "{{local_python_src}}"
+        dest: "{{remote_python_src}}"
+    - name: Running configure on Python source code
+      shell: "./configure --prefix={{remote_python}}"
+      args:
+        chdir: "{{remote_python_src}}/{{python_src}}"
+    - name: Installing Python
+      shell: "make && make install"
+      args:
+        chdir: "{{remote_python_src}}/{{python_src}}"
+    - block:
+        - name: Removing existing symlink to python
+          file:
+            path: "{{remote_python_bin}}/python"
+            state: absent
+        - name: Setting new symlink to python
+          file:
+            src: "{{remote_python_bin}}/{{python_versioned_executable}}"
+            dest: "{{remote_python_bin}}/python"
+            state: link
+      when: remote_python_symlink_overwrite == 'true'

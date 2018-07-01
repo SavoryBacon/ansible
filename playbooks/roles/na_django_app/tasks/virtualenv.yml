@@ -1,0 +1,72 @@
+---
+- block:
+    - name: (Deploy) Loading environment variables from properties file
+      # local python location. apparently varies by jenkins server
+      environment:
+        LD_LIBRARY_PATH: "{{local_python35_shared_lib_path|default(lookup('env', 'LD_LIBRARY_PATH'))}}"
+      django_props:
+        properties_file: "{{local_app_properties_file}}"
+        credentials_file: "{{password_file}}"
+        credentials_key: "{{master_password}}"
+        python_executable: "{{local_python_script_executable}}"
+        application_name: "{{git_project}}"
+        current_host: "{{ansible_fqdn}}"
+      delegate_to: local
+      register: app_props
+    - debug:
+        var: app_props
+        verbosity: 2
+      delegate_to: local
+    - name: (Deploy) Creating virtualenv for application
+      shell: "{{remote_python_bin}}/virtualenv {{remote_apps_env}} -p {{remote_python_bin}}/{{python_versioned_executable}} --no-pip"
+    - name: (Deploy) Running pip setup
+      shell: "{{remote_apps_env}}/bin/python {{remote_python_pip_src}}/{{python_pip_src}} --prefix={{remote_apps_env}} 'pip=={{python_pip_version}}'"
+    - name: (Deploy) Installing application requirements
+      pip:
+        virtualenv: "{{remote_apps_env}}"
+        requirements: "{{remote_apps_app_requirements}}"
+        umask: 0007
+      environment:
+        PIP_CONFIG_FILE: "{{remote_python_pip_conf}}"
+        PYTHONPATH: ""
+        LANG: "C"
+        LC_ALL: "en_US.utf-8"
+        LC_COLLATE: "en_US.utf-8"
+        LC_CTYPE: "en_US.utf-8"
+        LC_MESSAGES: "en_US.utf-8"
+        LC_MONETARY: "en_US.utf-8"
+        LC_NUMERIC: "en_US.utf-8"
+        LC_TIME: "en_US.utf-8"
+    - name: (Deploy) Checking virtualenv installed packages
+      shell: "source {{remote_apps_env}}/bin/activate && pip list"
+      register: pip_list
+    - debug:
+        var: pip_list.stdout_lines
+    - name: (Deploy) Configuring environment variables
+      template:
+        src: "postactivate_template.j2"
+        dest: "{{remote_apps_env}}/bin/postactivate"
+    - name: (Deploy) Adding hook to postactivate
+      shell: "echo '. {{remote_apps_env}}/bin/postactivate' >> {{remote_apps_env}}/bin/activate"
+  rescue:
+    - name: (Deploy) Removing remote application artifacts
+      file:
+        path: "{{item}}"
+        state: absent
+      with_items:
+        - "{{remote_apps_app_uuid}}"
+        - "{{remote_gunicorn_confd}}/{{remote_app_gunicorn}}"
+    - fail:
+        msg: "Failed to deploy"
+  always:
+    - name: (Deploy) Removing local application artifacts
+      file:
+        path: "{{item}}"
+        state: absent
+      with_items:
+        - "{{local_checkout_uuid_dir}}"
+        - "{{local_base_checkout_dir}}/{{app_uuid}}.tar.gz"
+      delegate_to: local
+      run_once: true
+  tags:
+    - deploy

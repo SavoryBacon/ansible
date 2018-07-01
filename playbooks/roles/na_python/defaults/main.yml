@@ -1,0 +1,29 @@
+---
+# Provisioning-Specific Variables
+# Generic
+python_pip_src: "get-pip.py"
+devpi_trusted_hosts:
+  - "devpi.liederbach.local"
+supervisord_port: 9001
+
+
+# Local
+local_python_src: "{{role_path}}/files/{{python_src}}.tgz"
+local_python_pip_src: "{{role_path}}/files/{{python_pip_src}}"
+
+# Remote
+remote_fuser: "/sbin/fuser"
+remote_python: "{{remote_apps}}/python"
+remote_python_src: "{{remote_python}}/src"
+remote_python_bin: "{{remote_python}}/bin"
+remote_python_symlink_overwrite: "true"
+remote_python_pip: "{{remote_python}}/pip"
+remote_python_pip_src: "{{remote_python_pip}}/src"
+remote_python_pip_filename: "pip.conf"
+remote_python_pip_conf: "{{remote_python_pip}}/{{remote_python_pip_filename}}"
+remote_supervisor: "{{remote_apps}}/supervisor"
+remote_supervisor_confd: "{{remote_supervisor}}/conf.d"
+remote_supervisor_bin: "{{remote_supervisor}}/bin"
+remote_supervisor_env: "{{remote_supervisor}}/env"
+remote_supervisor_run: "{{remote_supervisor}}/run"
+remote_supervisor_log: "{{remote_supervisor}}/logs"

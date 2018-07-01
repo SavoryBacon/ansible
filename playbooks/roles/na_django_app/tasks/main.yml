@@ -1,0 +1,18 @@
+---
+- include: preconditions.yml
+  tags:
+    - always
+- include: git.yml
+  tags:
+    - deploy
+- include: code.yml
+- include: virtualenv.yml
+- include: gunicorn.yml
+- include: static_files.yml
+  tags:
+    - deploy
+- include: migrate.yml
+  tags:
+    - migrate
+- include: supervisord.yml
+- include: clean_up.yml

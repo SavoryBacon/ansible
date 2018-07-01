@@ -1,0 +1,30 @@
+---
+# Devpi
+devpi_default_base_index_url: "http://devpi.liederbach.local"
+devpi_index_url: "{{devpi_base_index_url|default(devpi_default_base_index_url)}}/{{devpi_index}}/+simple"
+
+# Repository
+git_server: "github.com"
+git_key_file: "~/.ssh/id_rsa"
+
+# Server (RHEL 6)
+ansible_private_key_file: "/home/liederbach/.ssh/deploy_id_rsa"
+ansible_user: "daitnap1"
+remote_apps: "/opt/liederbach"
+remote_command_virtualenv: "/opt/virtualenv-15.0.1/bin/virtualenv"
+remote_command_base_python2: "/usr/bin/python2"
+remote_root_librarypath: "/tmp:/usr/lib/oracle/12.2/client64/lib"
+remote_app_user: "saitnap1"
+remote_app_group: "liederbach_apps"
+remote_ssl_cert_bundle: "/etc/pki/tls/certs/ca-bundle.crt"
+
+# App
+deployed_environment: "goldfinger"
+stability: "unstable"
+python_src: "Python-3.6.4"
+python_versioned_executable: "python3.6"
+python_pip_versioned_exectuable: "pip3.6"
+devpi_index: "liederbach/dev"
+devpi_extra_index: "liederbach/jenkins"
+gunicorn_worker_timeout: 300
+gunicorn_max_requests: 1000

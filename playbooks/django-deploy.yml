@@ -1,0 +1,4 @@
+---
+- hosts: "{{hosts|default('na_python')}}"
+  roles:
+    - na_django_app

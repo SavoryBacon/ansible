@@ -1,0 +1,35 @@
+#!/bin/bash
+
+# Kill previous process on that port
+
+/sbin/fuser -k {{ app_props.data.deployment.remote_app_port }}/tcp
+
+unlink {{ remote_apps_app_root }}/static
+ln -s {{ remote_apps_static }} {{ remote_apps_app_root }}/static
+
+NAME={{ project }}                                                  # Name of the application
+SOCKFILE={{ remote_apps_var_run }}/gunicorn.sock                    # we will communicate using this unix socket
+PIDFILE={{ remote_apps_var_run }}/gunicorn.pid                      # used for sending HUP signals for log rotation
+USER={{ remote_app_user }}                                          # the user to run as
+GROUP={{ remote_app_group }}                                        # the group to run as
+NUM_WORKERS={{ gunicorn_num_workers|default("$((`nproc` + 1))") }}  # how many worker processes should Gunicorn spawn
+WSGI_MODULE={{ remote_app_wsgi }}                                   # WSGI module name
+APP_OBJECT={{ remote_app_object }}                                  # App object name
+
+echo "Starting $NAME as `whoami`"
+
+# Activate the virtual environment
+source {{ remote_apps_env }}/bin/activate
+
+# Start your Unicorn
+exec {{ remote_apps_env }}/bin/gunicorn ${WSGI_MODULE}:${APP_OBJECT} \
+  --name=$NAME \
+  --workers=$NUM_WORKERS \
+  --bind=unix:$SOCKFILE \
+  --bind=0.0.0.0:{{ app_props.data.deployment.remote_app_port }} \
+  --log-level=debug \
+  --log-file=- \
+  --pid=$PIDFILE \
+  --config={{ remote_gunicorn_confd }}/{{ app_uuid }}-gunicorn.conf
+
+# sudo /usr/sbin/apachectl -k graceful

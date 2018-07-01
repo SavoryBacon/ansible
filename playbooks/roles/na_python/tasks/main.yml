@@ -1,0 +1,14 @@
+---
+- include: remote_apps.yml
+- include: python.yml
+  tags:
+    - python_install
+- include: pip.yml
+  tags:
+    - python_install
+- include: virtualenv.yml
+  tags:
+    - python_install
+- include: supervisord.yml
+  tags:
+    - supervisord_install

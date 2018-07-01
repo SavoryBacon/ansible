@@ -1,0 +1,6 @@
+---
+- block:
+    - name: Ensuring remote apps directory
+      file:
+        path: "{{remote_apps}}"
+        state: directory

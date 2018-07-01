@@ -1,0 +1,9 @@
+#!/bin/bash
+
+# Activate the virtual environment
+source {{ remote_apps_env }}/bin/activate
+
+exec {{ remote_apps_env }}/bin/celery worker \
+  --app={{celery_app_name}} \
+  --loglevel=debug \
+  --pidfile={{ remote_apps_var_run }}/celery.pid

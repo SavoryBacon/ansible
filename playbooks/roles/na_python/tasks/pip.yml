@@ -1,0 +1,26 @@
+---
+- block:
+    - name: Creating pip directory
+      file:
+        path: "{{remote_python_pip}}"
+        state: directory
+    - name: Creating pip source directory
+      file:
+        path: "{{remote_python_pip_src}}"
+        state: directory
+    - name: Copying get-pip.py
+      copy:
+        src: "{{local_python_pip_src}}"
+        dest: "{{remote_python_pip_src}}"
+    - name: Templating home pip configuration
+      template:
+        src: "pip_conf_template.j2"
+        dest: "{{remote_python_pip_conf}}"
+- block:
+    - name: Running pip setup
+      shell: "{{remote_python_bin}}/{{python_versioned_executable}} {{python_pip_src}}"
+      args:
+        chdir: "{{remote_python_pip_src}}"
+      environment:
+        PIP_CONFIG_FILE: "{{remote_python_pip_conf}}"
+        PYTHONPATH: ""

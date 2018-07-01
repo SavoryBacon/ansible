@@ -1,0 +1,52 @@
+---
+- block:
+    - name: (Undeploy) Determining if app releases folder exists
+      stat:
+        path: "{{remote_apps_app_root_releases}}"
+      register: app_releases
+    - name: (Undeploy) Finding all application code instances
+      shell: "find {{remote_apps_app_root_releases}}/ -name {{app_uuid_prefix}}\\*"
+      register: code_instances
+      when: app_releases.stat.exists
+    - name: (Undeploy) Removing application code
+      file:
+        path: "{{item}}"
+        state: absent
+      with_items: "{{code_instances.stdout_lines}}"
+      when: app_releases.stat.exists
+  tags:
+    - undeploy
+- block:
+    - name: (Deploy) Archiving application code for transfer
+      shell: "tar -cvzf {{local_base_checkout_dir}}/{{app_uuid}}.tar.gz {{app_uuid}}"
+      args:
+        chdir: "{{local_base_checkout_dir}}"
+      delegate_to: local
+      run_once: true
+    - name: (Deploy) Creating Release path on host
+      file:
+        path: "{{remote_apps_app_root_releases}}"
+        state: directory
+    - name: (Deploy) Sending application code to hosts
+      unarchive:
+        src: "{{local_base_checkout_dir}}/{{app_uuid}}.tar.gz"
+        dest: "{{remote_apps_app_root_releases}}"
+  rescue:
+    - name: (Deploy) Removing remote application artifacts
+      file:
+        path: "{{item}}"
+        state: absent
+      with_items:
+        - "{{remote_apps_app_uuid}}"
+        - "{{remote_gunicorn_confd}}/{{remote_app_gunicorn}}"
+    - fail:
+        msg: "Failed to deploy"
+  always:
+    - name: (Deploy) Removing local archived copy
+      file:
+        path: "{{local_base_checkout_dir}}/{{app_uuid}}.tar.gz"
+        state: absent
+      delegate_to: local
+      run_once: true
+  tags:
+    - deploy

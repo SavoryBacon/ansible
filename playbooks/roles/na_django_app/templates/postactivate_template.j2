@@ -1,0 +1,26 @@
+{% if app_props.data.environment.databases %}
+{% for db in app_props.data.environment.databases %}
+{% if db.db_type == 'oracle' %}
+export {{ db.env_var }}='oracle://{{ db.user }}:{{ db.password }}@{{ db.database | upper }}'
+{% endif %}
+{% endfor %}
+{% endif %}
+{% if app_props.data.environment.other_protected_items %}
+{% for item in app_props.data.environment.other_protected_items %}
+export {{ item.env_var }}='{{ item.value }}'
+{% endfor %}
+{% endif %}
+{% if app_props.data.environment.other_envs %}
+{% for item in app_props.data.environment.other_envs %}
+export {{ item.env_var }}='{{ item.value }}'
+{% endfor %}
+{% endif %}
+export DEPLOYED_ENVIRONMENT='{{ deployed_environment }}'
+export BUILD_STABILITY='{{ stability }}'
+export BUILD_TIMESTAMP='{{ deploy_datetime }}'
+export BUILD_VERSION='{{ git_version }}'
+export BUILD_APP_UUID='{{ app_uuid }}'
+export PYTHONPATH='{{ remote_apps_app }}'
+export LD_LIBRARY_PATH='{{ remote_root_librarypath }}'
+export APP_LOGGING_DIR='{{ remote_apps_app_log }}'
+export REQUESTS_CA_BUNDLE='{{ remote_ssl_cert_bundle }}'

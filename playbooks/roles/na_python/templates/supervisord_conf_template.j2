@@ -1,0 +1,16 @@
+[supervisord]
+logfile={{ remote_supervisor_log }}/supervisord.log
+pidfile={{ remote_supervisor_run }}/supervisord.pid
+
+[inet_http_server]
+port = 127.0.0.1:{{ supervisord_port }}
+
+[rpcinterface:supervisor]
+supervisor.rpcinterface_factory = supervisor.rpcinterface:make_main_rpcinterface
+
+[supervisorctl]
+serverurl=http://127.0.0.1:{{ supervisord_port }} ; use an http:// url to specify an inet socket
+history_file={{ remote_supervisor }}/.supervisord_history  ; use readline history if available
+
+[include]
+files = {{ remote_supervisor_confd }}/*.conf

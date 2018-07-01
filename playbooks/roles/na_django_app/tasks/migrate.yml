@@ -1,0 +1,20 @@
+---
+- block:
+    - name: (Deploy) Migrating application database
+      shell: "source {{remote_apps_env}}/bin/activate && {{remote_app_migrate}}"
+      args:
+        chdir: "{{remote_apps_app}}"
+      run_once: true
+      become: true
+      become_user: "{{remote_app_user}}"
+  rescue:
+    # TODO: See what backout logic we can attempt here if migrate fails.
+    - name: (Deploy) Removing remote application artifacts
+      file:
+        path: "{{item}}"
+        state: absent
+      with_items:
+        - "{{remote_apps_app_uuid}}"
+        - "{{remote_gunicorn_confd}}/{{remote_app_gunicorn}}"
+    - fail:
+        msg: "ERROR: Migration command failed, which may have left database in an unexpected state."

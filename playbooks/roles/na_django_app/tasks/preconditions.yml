@@ -1,0 +1,6 @@
+---
+- block:
+    - set_fact:
+        deploy_datetime: "{{ansible_date_time.date|replace('-', '')}}-{{ansible_date_time.time|replace(':', '')}}"
+      delegate_to: local
+      run_once: true

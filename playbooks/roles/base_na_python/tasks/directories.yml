@@ -1,0 +1,36 @@
+---
+- name: Clean python directory
+  file:
+    path: "{{remote_python}}"
+    state: absent
+- name: Clean supervisor directory
+  file:
+    path: "{{remote_supervisor}}"
+    state: absent
+- name: Find application directories
+  find:
+    paths: "{{remote_apps}}"
+    file_type: directory
+  register: app_folders
+- name: Find application subdirectories
+  find:
+    path: "{{item.path}}"
+    file_type: directory
+  with_items: "{{app_folders.files}}"
+  when: 
+    - '"deployment_config" not in item.path'
+    - '"lost+found" not in item.path'
+    - '"python" not in item.path'
+    - '"rc.d" not in item.path'
+    - '"supervisor" not in item.path'
+  register: app_folders_and_files
+- name: Clean app directories
+  file:
+    path: "{{item.1.path}}"
+    state: absent
+  with_subelements: 
+    - "{{app_folders_and_files.results}}"
+    - files
+  when: 
+    - '"deployment_config" not in item.1.path'
+    - '"logs" not in item.1.path'

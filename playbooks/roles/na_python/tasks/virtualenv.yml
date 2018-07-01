@@ -1,0 +1,10 @@
+---
+- block:
+    - name: Installing virtualenv
+      pip:
+        executable: "{{remote_python_bin}}/{{python_pip_versioned_exectuable}}"
+        name: "virtualenv"
+        state: latest
+      environment:
+        PIP_CONFIG_FILE: "{{remote_python_pip_conf}}"
+        PYTHONPATH: ""

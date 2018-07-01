@@ -1,0 +1,57 @@
+---
+- block:
+    - name: Creating supervisor directory
+      file:
+        path: "{{remote_supervisor}}"
+        state: directory
+        mode: 0770
+        group: "{{remote_app_group}}"
+    - name: Installing supervisor
+      pip:
+        virtualenv: "{{remote_supervisor_env}}"
+        virtualenv_python: "{{remote_command_base_python2}}"
+        virtualenv_command: "{{remote_command_virtualenv}}"
+        name: "supervisor"
+        state: present
+        version: 3.3.1
+      environment:
+        PIP_CONFIG_FILE: "{{remote_python_pip_conf}}"
+        LD_LIBRARY_PATH: "{{remote_root_librarypath}}"
+    - name: Creating supervisor conf.d directory
+      file:
+        path: "{{remote_supervisor_confd}}"
+        state: directory
+        mode: 0770
+        group: "{{remote_app_group}}"
+    - name: Templating supervisord.conf
+      template:
+        src: "supervisord_conf_template.j2"
+        dest: "{{remote_supervisor_confd}}/supervisord.conf"
+        mode: 0770
+        group: "{{remote_app_group}}"
+    - name: Creating supervisor run directory
+      file:
+        path: "{{remote_supervisor_run}}"
+        state: directory
+        mode: 0770
+        group: "{{remote_app_group}}"
+    - name: Creating supervisor log directory
+      file:
+        path: "{{remote_supervisor_log}}"
+        state: directory
+        mode: 0770
+        group: "{{remote_app_group}}"
+    - name: Identifying existing supervisord instance  # TODO: This should look at port, not pid
+      command: pgrep supervisord
+      register: supervisor_instances
+      failed_when: supervisor_instances.stderr != ""
+    - name: Stop existing supervisord instance
+      command: "{{remote_fuser}} -k {{supervisord_port}}/tcp"
+      when: supervisor_instances.stdout != ""
+      become: true
+      become_user: "{{remote_app_user}}"
+      ignore_errors: true
+    - name: Start supervisor
+      command: "{{remote_supervisor_env}}/bin/supervisord -c {{remote_supervisor_confd}}/supervisord.conf"
+      become: true
+      become_user: "{{remote_app_user}}"

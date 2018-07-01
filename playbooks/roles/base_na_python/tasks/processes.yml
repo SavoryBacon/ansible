@@ -1,0 +1,37 @@
+---
+- name: Get PIDs for all application instances
+  shell: "pgrep gunicorn"
+  register: gunicorn_instances
+  failed_when: gunicorn_instances.stderr != ""
+- name: Stopping all instances
+  shell: "kill -9 {{item}}"
+  with_items: "{{gunicorn_instances.stdout_lines}}"
+  failed_when: 
+    - "gunicorn_instances.stderr"
+    - "'No such process' not in gunicorn_instances.stderr"
+  become: true
+  become_user: "{{remote_app_user}}"
+- name: Get PIDs for all celery instances
+  shell: "pgrep celery"
+  register: celery_instances
+  failed_when: celery_instances.stderr != ""
+- name: Stopping all instances
+  shell: "kill -9 {{item}}"
+  with_items: "{{celery_instances.stdout_lines}}"
+  failed_when: 
+    - "celery_instances.stderr"
+    - "'No such process' not in celery_instances.stderr"
+  become: true
+  become_user: "{{remote_app_user}}"
+- name: Get PIDs for Supervisor instances
+  shell: "pgrep supervisor"
+  register: supervisor_instances
+  failed_when: supervisor_instances.stderr != ""
+- name: Stopping all instances
+  shell: "kill -9 {{item}}"
+  with_items: "{{supervisor_instances.stdout_lines}}"
+  failed_when:
+    - "supervisor_instances.stderr"
+    - "'No such process' not in supervisor_instances.stderr"
+  become: true
+  become_user: "{{remote_app_user}}"

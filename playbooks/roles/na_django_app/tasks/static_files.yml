@@ -1,0 +1,33 @@
+---
+- block:
+    - name: (Deploy) Create static directory
+      file:
+        path: "{{remote_apps_static}}"
+        state: directory
+        mode: 0770
+        group: "{{remote_app_group}}"
+    - name: (Deploy) Loading static files
+      shell: "source {{remote_apps_env}}/bin/activate && {{remote_app_static}}"
+      args:
+        chdir: "{{remote_apps_app}}"
+      become: true
+      become_user: "{{remote_app_user}}"
+    - name: (Deploy) Setting static file permissions
+      file:
+        path: "{{remote_apps_static}}"
+        state: directory
+        mode: 0770
+        group: "{{remote_app_group}}"
+        recurse: yes
+      become: true
+      become_user: "{{remote_app_user}}"
+  rescue:
+    - name: (Deploy) Removing remote application artifacts
+      file:
+        path: "{{item}}"
+        state: absent
+      with_items:
+        - "{{remote_apps_app_uuid}}"
+        - "{{remote_gunicorn_confd}}/{{remote_app_gunicorn}}"
+    - fail:
+        msg: "Failed to deploy"

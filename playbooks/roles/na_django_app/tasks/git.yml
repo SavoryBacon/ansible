@@ -1,0 +1,15 @@
+---
+- block:
+    - name: (Deploy) Clean artifact path
+      shell: "rm -rf {{local_base_checkout_dir}}/{{app_uuid_prefix}}*"
+      delegate_to: local
+      run_once: true
+    - name: (Deploy) Checkout django project
+      git:
+        repo: "{{repo_url}}"
+        dest: "{{local_checkout_app_dir}}"
+        version: "{{git_version}}"
+        key_file: "{{git_key_file}}"
+        recursive: "{{git_include_submodules}}"
+      delegate_to: local
+      run_once: true

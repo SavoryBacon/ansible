@@ -1,0 +1,13 @@
+[global]
+cert = {{remote_ssl_cert_bundle}}
+index-url = {{ devpi_index_url }}
+{% if devpi_extra_index is defined %}
+extra-index-url =
+{% for extra_index in devpi_extra_index %}
+    {{devpi_base_index_url|default(devpi_default_base_index_url)}}/{{extra_index}}/+simple
+{% endfor %}
+{% endif %}
+trusted-host =
+{% for trusted_host in devpi_trusted_hosts %}
+    {{ trusted_host }}
+{% endfor %}

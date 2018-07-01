@@ -1,0 +1,145 @@
+---
+- block:
+    - name: (Undeploy) Stopping celery beat from supervisorctl
+      supervisorctl:
+        name: "{{celery_beat_program_name}}"
+        state: stopped
+        supervisorctl_path: "{{remote_supervisor_env}}/bin/supervisorctl"
+      register: stop_celery_beat
+      failed_when:
+        - stop_celery_beat.failed is defined
+        - stop_celery_beat.failed == true
+        - "'no such process' not in stop_celery_beat.msg"
+      ignore_errors: True
+      when: 
+        - has_celery_beat is defined
+        - has_celery_beat
+    - name: (Undeploy) Stopping celery from supervisorctl
+      supervisorctl:
+        name: "{{celery_program_name}}"
+        state: stopped
+        supervisorctl_path: "{{remote_supervisor_env}}/bin/supervisorctl"
+      register: stop_celery
+      failed_when:
+        - stop_celery.failed is defined
+        - stop_celery.failed == true
+        - "'no such process' not in stop_celery.msg"
+      ignore_errors: True
+      when: 
+        - has_celery is defined
+        - has_celery
+    - name: (Undeploy) Stopping application from supervisorctl
+      supervisorctl:
+        name: "{{project}}"
+        state: stopped
+        supervisorctl_path: "{{remote_supervisor_env}}/bin/supervisorctl"
+      register: stop_application
+      failed_when:
+        - stop_application.failed is defined
+        - stop_application.failed == true
+        - "'no such process' not in stop_application.msg"
+      ignore_errors: True
+    - name: (Undeploy) Removing supervisor application configuration file
+      file:
+        path: "{{remote_supervisor_confd}}/{{project}}-supervisor.conf"
+        state: absent
+    - block:
+        - name: (Undeploy) Rereading supervisorctl
+          shell: "{{remote_supervisor_env}}/bin/supervisorctl reread"
+        - name: (Undeploy) Updating supervisorctl
+          shell: "{{remote_supervisor_env}}/bin/supervisorctl update"
+  tags:
+    - undeploy
+- block:
+    - name: (Deploy) Checking for existing supervisor application configuration file
+      stat:
+        path: "{{remote_supervisor_confd}}/{{project}}-supervisor.conf"
+      register: supervisor_app_config
+    - name: (Deploy) Backing up existing supervisor application configuration file
+      shell: "mv {{remote_supervisor_confd}}/{{project}}-supervisor.conf {{remote_supervisor_confd}}/{{project}}-supervisor.backup"
+      when:
+        - supervisor_app_config.stat.exists == True
+    - name: (Deploy) Creating supervisor application configuration file
+      template:
+        src: "app_supervisor_conf_template.j2"
+        dest: "{{remote_supervisor_confd}}/{{project}}-supervisor.conf"
+        mode: 0770
+        group: "{{remote_app_group}}"
+    - name: (Deploy) Rereading supervisorctl
+      shell: "{{remote_supervisor_env}}/bin/supervisorctl reread"
+    - name: (Deploy) Updating supervisorctl
+      shell: "{{remote_supervisor_env}}/bin/supervisorctl update"
+    # - name: (Deploy) Starting application from supervisorctl  # TODO: is this part necessary?
+    #   supervisorctl:
+    #     name: "{{project}}"
+    #     state: restarted
+    #     supervisorctl_path: "{{remote_supervisor_env}}/bin/supervisorctl"
+    - name: (Deploy) Removing backup supervisor application configuration file
+      file:
+        path: "{{remote_supervisor_confd}}/{{project}}-supervisor.backup"
+        state: absent
+    - name: (Deploy) Getting supervisorctl status
+      command: "{{remote_supervisor_env}}/bin/supervisorctl status"
+      register: supervisor_status
+    - debug:
+        var: supervisor_status.stdout_lines
+  rescue:
+    - name: (Deploy Backup Restore) Removing remote application artifacts
+      file:
+        path: "{{item}}"
+        state: absent
+      with_items:
+        - "{{remote_apps_app_uuid}}"
+        - "{{remote_gunicorn_confd}}/{{remote_app_gunicorn}}"
+    - block:
+        - name: (Deploy Backup Restore) Restoring existing supervisor application configuration file
+          shell: "mv {{remote_supervisor_confd}}/{{project}}-supervisor.backup {{remote_supervisor_confd}}/{{project}}-supervisor.conf"
+        - name: (Backup Restore) Rereading supervisorctl
+          shell: "{{remote_supervisor_env}}/bin/supervisorctl reread"
+        - name: (Backup Restore) Updating supervisorctl
+          shell: "{{remote_supervisor_env}}/bin/supervisorctl update"
+        - name: (Backup Restore) Starting application from supervisorctl
+          supervisorctl:
+            name: "{{project}}"
+            state: restarted
+            supervisorctl_path: "{{remote_supervisor_env}}/bin/supervisorctl"
+        - name: (Backup Restore) Starting celery from supervisorctl
+          supervisorctl:
+            name: "{{celery_program_name}}"
+            state: restarted
+            supervisorctl_path: "{{remote_supervisor_env}}/bin/supervisorctl"
+          when: 
+            - has_celery is defined
+            - has_celery
+        - name: (Backup Restore) Starting celery beat from supervisorctl
+          supervisorctl:
+            name: "{{celery_beat_program_name}}"
+            state: restarted
+            supervisorctl_path: "{{remote_supervisor_env}}/bin/supervisorctl"
+          when: 
+            - has_celery_beat is defined
+            - has_celery_beat
+      when:
+        - supervisor_app_config.stat.exists == True
+        - deploy_mode != "force"
+    - block:
+        - name: (Deploy Backout) Removing existing supervisor application configuration file
+          file:
+            path: "{{remote_supervisor_confd}}/{{project}}-supervisor.conf"
+            state: absent
+        - name: (Deploy Backout) Rereading supervisorctl
+          shell: "{{remote_supervisor_env}}/bin/supervisorctl reread"
+        - name: (Deploy Backout) Updating supervisorctl
+          shell: "{{remote_supervisor_env}}/bin/supervisorctl update"
+      when:
+        - deploy_mode == "force"
+    - name: (Deploy Backout) Removing backup supervisor application configuration file
+      file:
+        path: "{{remote_supervisor_confd}}/{{project}}-supervisor.backup"
+        state: absent
+      when:
+        - supervisor_app_config.stat.exists == True
+    - fail:
+        msg: "Failed to deploy"
+  tags:
+    - deploy

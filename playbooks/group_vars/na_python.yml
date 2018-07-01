@@ -1,0 +1,4 @@
+---
+# Environment agnostic variables.
+# NOTE: Variables are overridden by child group vars (e.g., na_python)
+

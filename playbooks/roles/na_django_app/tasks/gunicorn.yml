@@ -1,0 +1,82 @@
+---
+- block:
+    - name: (Undeploy) Determining if gunicorn configuration folder exists
+      stat:
+        path: "{{remote_gunicorn_confd}}"
+      register: gunicorn_conf
+    - name: (Undeploy) Finding all application gunicorn configuration files
+      shell: "find {{remote_gunicorn_confd}}/ -name {{app_uuid_prefix}}\\*"
+      register: code_instances
+      when: gunicorn_conf.stat.exists
+    - name: (Undeploy) Removing application gunicorn cofiguration files
+      file:
+        path: "{{item}}"
+        state: absent
+      with_items: "{{code_instances.stdout_lines}}"
+      when: gunicorn_conf.stat.exists
+  tags:
+    - undeploy
+- block:
+    - name: (Deploy) Creating application bin directory
+      file:
+        path: "{{remote_apps_bin}}"
+        state: directory
+    - name: (Deploy) Create application run directory
+      file:
+        path: "{{remote_apps_var_run}}"
+        state: directory
+        mode: 0770
+        group: "{{remote_app_group}}"
+    - name: (Deploy) Creating gunicorn conf.d directory
+      file:
+        path: "{{remote_gunicorn_confd}}"
+        state: directory
+    - name: (Deploy) Creating gunicorn application configuration file
+      template:
+        src: "gunicorn_conf_template.j2"
+        dest: "{{remote_gunicorn_confd}}/{{remote_app_gunicorn}}"
+    - name: (Deploy) Creating gunicorn application start script
+      template:
+        src: "gunicorn_start_template.j2"
+        dest: "{{remote_apps_bin}}/gunicorn-start.sh"
+        mode: 0770
+        group: "{{remote_app_group}}"
+    - name: (Deploy) Creating celery worker application start script
+      template:
+        src: "celery_worker_start_template.j2"
+        dest: "{{remote_apps_bin}}/celery-worker-start.sh"
+        mode: 0770
+        group: "{{remote_app_group}}"
+      when:
+        - has_celery is defined
+        - has_celery
+    - name: (Deploy) Creating celery beat application start script
+      template:
+        src: "celery_beat_start_template.j2"
+        dest: "{{remote_apps_bin}}/celery-beat-start.sh"
+        mode: 0770
+        group: "{{remote_app_group}}"
+      when:
+        - has_celery_beat is defined
+        - has_celery_beat
+    - name: (Deploy) Creating amqp listener start script
+      template:
+        src: "amqp_listener_start_template.j2"
+        dest: "{{remote_apps_bin}}/amqp-listener-start.sh"
+        mode: 0770
+        group: "{{remote_app_group}}"
+      when:
+        - has_rabbitmq is defined
+        - has_rabbitmq
+  rescue:
+    - name: (Deploy) Removing remote application artifacts
+      file:
+        path: "{{item}}"
+        state: absent
+      with_items:
+        - "{{remote_apps_app_uuid}}"
+        - "{{remote_gunicorn_confd}}/{{remote_app_gunicorn}}"
+    - fail:
+        msg: "Failed to deploy"
+  tags:
+    - deploy

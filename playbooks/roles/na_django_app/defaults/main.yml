@@ -1,0 +1,60 @@
+---
+# Provisioning-Specific Variables
+# Generic
+repo_url: "git@{{git_server}}:{{git_group|default('UNDEFINED')}}/{{git_project}}.git"
+app_uuid_prefix: "{{project}}__"
+app_uuid: "{{app_uuid_prefix}}{{deploy_datetime}}"
+deploy_mode: "failsafe"
+force_handlers: True
+celery_program_name: "{{project}}-celery-worker"
+celery_beat_program_name: "{{project}}-celery-beat"
+rabbitmq_program_name: "{{project}}-rabbitmq"
+python_pip_src: "get-pip.py"
+python_pip_version: "9.0.1"
+
+
+# Local
+devpi_library_name: "{{project}}"  # TODO: implement devpi deployment
+local_python_script_executable: "~/.virtualenvs/ansible-python3-aux/bin/python"
+local_base_checkout_dir: "{{role_path}}/files/app_checkout"
+local_checkout_uuid_dir: "{{local_base_checkout_dir}}/{{app_uuid}}"
+local_checkout_app_dir: "{{local_checkout_uuid_dir}}/app"
+local_app_properties_file: "{{local_checkout_app_dir}}/deployment/{{deployed_environment}}/properties.yml"
+
+
+# Remote
+remote_app_user: "{{ansible_user}}"
+remote_app_group: "{{ansible_user}}"
+remote_app_gunicorn: "{{app_uuid}}-gunicorn.conf"
+remote_apps_app_root: "{{remote_apps}}/{{project}}"
+remote_apps_app_log: "{{remote_apps_app_root}}/logs"
+remote_apps_app_root_releases: "{{remote_apps_app_root}}/releases"
+remote_apps_app_uuid: "{{remote_apps_app_root_releases}}/{{app_uuid}}"
+remote_apps_var: "{{remote_apps_app_uuid}}/var"
+remote_apps_var_run: "{{remote_apps_var}}/run"
+remote_apps_bin: "{{remote_apps_app_uuid}}/bin"
+remote_apps_app: "{{remote_apps_app_uuid}}/app"
+remote_apps_env: "{{remote_apps_app_uuid}}/env"
+remote_apps_static: "{{ remote_apps_app_uuid }}/static"
+remote_gunicorn: "{{remote_apps_app_root}}/gunicorn"
+remote_gunicorn_confd: "{{remote_gunicorn}}/conf.d"
+remote_supervisor: "{{remote_apps}}/supervisor"
+remote_supervisor_confd: "{{remote_supervisor}}/conf.d"
+remote_supervisor_env: "{{remote_supervisor}}/env"
+remote_supervisor_log: "{{remote_supervisor}}/logs"
+remote_python: "{{remote_apps}}/python"
+remote_python_bin: "{{remote_python}}/bin"
+remote_python_pip: "{{remote_python}}/pip"
+remote_python_pip_src: "{{remote_python_pip}}/src"
+remote_python_pip_filename: "pip.conf"
+remote_python_pip_conf: "{{remote_python_pip}}/{{remote_python_pip_filename}}"
+
+
+# Remote Django vars
+remote_apps_app_requirements: "{{remote_apps_app_uuid}}/{{app_props.data.deployment.remote_app_requirements_file|default('app/requirements/production.txt')}}"
+remote_app_wsgi_default: "config.wsgi"
+remote_app_wsgi: "{{app_props.data.deployment.remote_app_wsgi|default(remote_app_wsgi_default)}}"
+remote_app_object: "{{app_props.data.deployment.remote_app_object|default('application')}}"
+remote_app_static: "{{app_props.data.deployment.remote_app_static|default('python manage.py collectstatic --noinput')}}"
+remote_app_migrate: "{{app_props.data.deployment.remote_app_migrate|default('python manage.py migrate_plus --noinput --database=default_owner')}}"
+remote_app_settings: "{{app_props.data.deployment.remote_app_settings|default('config.settings.production')}}"
